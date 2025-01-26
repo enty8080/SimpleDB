@@ -71,39 +71,54 @@ int validate_ipv4_address(const char *ip)
     return 1;
 }
 
-Table *find_table(const char *table_name)
+Database *create_db(void)
+{
+    Database *db;
+
+    db = calloc(1, sizeof(*db));
+    if (db == NULL)
+    {
+        printf("Failed to allocate memory for DB.\n");
+        return NULL;
+    }
+
+    db->table_count = 0;
+    return db;
+}
+
+Table *find_table(Database *db, const char *table_name)
 {
     int i;
 
-    for (i = 0; i < db.table_count; i++)
+    for (i = 0; i < db->table_count; i++)
     {
-        if (strcmp(db.tables[i].name, table_name) == 0)
+        if (strcmp(db->tables[i].name, table_name) == 0)
         {
-            return &db.tables[i];
+            return &db->tables[i];
         }
     }
 
     return NULL;
 }
 
-void create_table(const char *table_name, char *columns)
+void create_table(Database *db, const char *table_name, char *columns)
 {
     Table *table;
     char *token;
 
-    if (db.table_count >= MAX_TABLES)
+    if (db->table_count >= MAX_TABLES)
     {
         printf("Error: Maximum table limit reached.\n");
         return;
     }
 
-    if (find_table(table_name))
+    if (find_table(db, table_name))
     {
         printf("Error: Table '%s' already exists.\n", table_name);
         return;
     }
 
-    table = &db.tables[db.table_count++];
+    table = &db->tables[db->table_count++];
     strcpy(table->name, table_name);
     table->column_count = 0;
     table->row_count = 0;
@@ -120,20 +135,20 @@ void create_table(const char *table_name, char *columns)
     if (table->column_count == 0)
     {
         printf("Error: No columns defined for table '%s'.\n", table_name);
-        db.table_count--;
+        db->table_count--;
         return;
     }
 
     printf("Table '%s' with %d columns created successfully.\n", table_name, table->column_count);
 }
 
-void insert_into_table(const char *table_name, char *values)
+void insert_into_table(Database *db, const char *table_name, char *values)
 {
     Table *table;
     char *token;
     int col_index;
 
-    table = find_table(table_name);
+    table = find_table(db, table_name);
 
     if (!table)
     {
@@ -184,13 +199,13 @@ void insert_into_table(const char *table_name, char *values)
     printf("Row inserted into table '%s'.\n", table_name);
 }
 
-void select_from_table(const char *table_name)
+void select_from_table(Database *db, const char *table_name)
 {
     Table *table;
     int i;
     int j;
 
-    table = find_table(table_name);
+    table = find_table(db, table_name);
 
     if (!table)
     {
@@ -218,7 +233,7 @@ void select_from_table(const char *table_name)
     }
 }
 
-void save_database_to_file(const char *filename)
+void save_database_to_file(Database *db, const char *filename)
 {
     FILE *file;
 
@@ -230,13 +245,13 @@ void save_database_to_file(const char *filename)
         return;
     }
 
-    fwrite(&db, sizeof(Database), 1, file);
+    fwrite(db, sizeof(Database), 1, file);
 
     fclose(file);
     printf("Database saved to '%s'.\n", filename);
 }
 
-void load_database_from_file(const char *filename)
+void load_database_from_file(Database *db, const char *filename)
 {
     FILE *file;
 
@@ -248,13 +263,13 @@ void load_database_from_file(const char *filename)
         return;
     }
 
-    fread(&db, sizeof(Database), 1, file);
+    fread(db, sizeof(Database), 1, file);
 
     fclose(file);
     printf("Database loaded from '%s'.\n", filename);
 }
 
-void parse_query(const char *query)
+void parse_query(Database *db, const char *query)
 {
     char query_copy[MAX_QUERY_LENGTH];
     char *command;
@@ -304,7 +319,7 @@ void parse_query(const char *query)
             return;
         }
 
-        create_table(table_name, columns);
+        create_table(db, table_name, columns);
     }
     else if (strcmp(command, "INSERT") == 0)
     {
@@ -346,7 +361,7 @@ void parse_query(const char *query)
             return;
         }
 
-        insert_into_table(table_name, columns);
+        insert_into_table(db, table_name, columns);
     }
     else if (strcmp(command, "SELECT") == 0)
     {
@@ -359,15 +374,15 @@ void parse_query(const char *query)
             return;
         }
 
-        select_from_table(table_name);
+        select_from_table(db, table_name);
     }
     else if (strcmp(command, "SAVE") == 0)
     {
-        save_database_to_file(DB_FILE);
+        save_database_to_file(db, DB_FILE);
     }
     else if (strcmp(command, "LOAD") == 0)
     {
-        load_database_from_file(DB_FILE);
+        load_database_from_file(db, DB_FILE);
     }
     else
     {

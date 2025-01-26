@@ -28,15 +28,14 @@ typedef struct
     int table_count;
 } Database;
 
-Database db;
-
-void create_table(const char *table_name, char *columns);
-void insert_into_table(const char *table_name, char *values);
-void select_from_table(const char *table_name);
-void parse_query(const char *query);
-Table *find_table(const char *table_name);
-void save_database_to_file(const char *filename);
-void load_database_from_file(const char *filename);
+Database *create_db(void);
+void create_table(Database *db, const char *table_name, char *columns);
+void insert_into_table(Database *db, const char *table_name, char *values);
+void select_from_table(Database *db, const char *table_name);
+void parse_query(Database *db, const char *query);
+Table *find_table(Database *db, const char *table_name);
+void save_database_to_file(Database *db, const char *filename);
+void load_database_from_file(Database *db, const char *filename);
 int validate_ipv4_address(const char *ip);
 void trim_whitespace(char *str);
 

@@ -8,8 +8,9 @@
 int main()
 {
     char *query;
+    Database *db;
 
-    db.table_count = 0;
+    db = create_db();
 
     printf("Simple SQL-like Database\n");
     printf("Copyright (c) 2025 Ivan Nikolskiy, All Rights Reserved.\n\n");
@@ -33,7 +34,7 @@ int main()
 
         if (strlen(query) > 0)
         {
-            parse_query(query);
+            parse_query(db, query);
             linenoiseHistoryAdd(query);
         }
 
