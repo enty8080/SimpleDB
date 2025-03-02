@@ -1,15 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
 #include "linenoise.h"
 #include "db.h"
 
-int main()
+int main(void)
 {
     char *query;
     Database *db;
-
+    
     db = create_db();
 
     printf("Simple SQL-like Database\n");
@@ -34,12 +33,14 @@ int main()
 
         if (strlen(query) > 0)
         {
-            parse_query(db, query);
+            db = parse_query(db, query);
             linenoiseHistoryAdd(query);
         }
 
         free(query);
     }
 
+    free_database(db);
+    
     return 0;
 }

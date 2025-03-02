@@ -1,42 +1,53 @@
-#ifndef _DB_H_
-#define _DB_H_
+#ifndef DB_H
+#define DB_H
 
-#define MAX_TABLES 10
-#define MAX_COLUMNS 10
-#define MAX_ROWS 100
+#include <stdio.h>
+
 #define MAX_QUERY_LENGTH 256
-#define MAX_NAME_LENGTH 50
+
+/* Default filename for saving/loading the database */
 #define DB_FILE "database.db"
 
-typedef struct
+
+typedef struct Column
 {
-    char name[MAX_NAME_LENGTH];
-    char data[MAX_ROWS][MAX_NAME_LENGTH];
+    char *name;
+    char **data; /* Array of string data for each row */
 } Column;
 
-typedef struct
+typedef struct Table
 {
-    char name[MAX_NAME_LENGTH];
-    Column columns[MAX_COLUMNS];
-    int column_count;
+    char *name;
     int row_count;
+    int column_count;
+    Column **columns;
 } Table;
 
-typedef struct
+typedef struct Database
 {
-    Table tables[MAX_TABLES];
     int table_count;
+    Table **tables;
 } Database;
 
+/* Database Operations */
 Database *create_db(void);
-void create_table(Database *db, const char *table_name, char *columns);
-void insert_into_table(Database *db, const char *table_name, char *values);
-void select_from_table(Database *db, const char *table_name);
-void parse_query(Database *db, const char *query);
-Table *find_table(Database *db, const char *table_name);
-void save_database_to_file(Database *db, const char *filename);
-void load_database_from_file(Database *db, const char *filename);
-int validate_ipv4_address(const char *ip);
-void trim_whitespace(char *str);
+void free_database(Database *db);
 
-#endif
+/* Table Operations */
+Table *find_table(Database *db, const char *table_name);
+void create_table(Database *db, const char *table_name, const char *columns_str);
+void insert_into_table(Database *db, const char *table_name, const char *values_str);
+void select_from_table(Database *db, const char *table_name);
+
+/* File Operations */
+void save_database_to_file(Database *db, const char *filename);
+Database *load_database_from_file(Database *db, const char *filename);
+
+/* Query Parsing */
+Database *parse_query(Database *db, const char *query);
+
+/* Utility Functions */
+int validate_ipv4_address(const char *ip);
+char *trim_whitespace(char *str);
+
+#endif /* DB_H */
