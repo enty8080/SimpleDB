@@ -9,7 +9,8 @@
  */
 static void write_string(FILE *file, const char *str)
 {
-    int len = (int)strlen(str) + 1;
+    int len;
+    len = (int)strlen(str) + 1;
     fwrite(&len, sizeof(int), 1, file);
     fwrite(str, sizeof(char), len, file);
 }
@@ -72,9 +73,12 @@ char *trim_whitespace(char *str)
  */
 int validate_ipv4_address(const char *ip)
 {
-    int segments = 0;
-    int ch_count = 0;
-    const char *ptr = ip;
+    int segments, ch_count;
+    const char *ptr;
+
+    segments = 0;
+    ch_count = 0;
+    ptr = ip;
 
     while (*ptr)
     {
@@ -110,7 +114,9 @@ int validate_ipv4_address(const char *ip)
  */
 Database *create_db(void)
 {
-    Database *db = malloc(sizeof(Database));
+    Database *db;
+
+    db = malloc(sizeof(Database));
     if (db == NULL)
     {
         printf("Failed to allocate memory for DB.\n");
@@ -126,22 +132,26 @@ Database *create_db(void)
  */
 void free_database(Database *db)
 {
+    int i, j, r;
+    Table *currTable;
+    Column *currColumn;
+
     if (db == NULL)
     {
         return;
     }
 
-    for (int i = 0; i < db->table_count; i++)
+    for (i = 0; i < db->table_count; i++)
     {
-        Table *currTable = db->tables[i];
+        currTable = db->tables[i];
         free(currTable->name);
 
-        for (int j = 0; j < currTable->column_count; j++)
+        for (j = 0; j < currTable->column_count; j++)
         {
-            Column *currColumn = currTable->columns[j];
+            currColumn = currTable->columns[j];
             free(currColumn->name);
 
-            for (int r = 0; r < currTable->row_count; r++)
+            for (r = 0; r < currTable->row_count; r++)
             {
                 free(currColumn->data[r]);
             }
@@ -160,7 +170,9 @@ void free_database(Database *db)
  */
 Table *find_table(Database *db, const char *table_name)
 {
-    for (int i = 0; i < db->table_count; i++)
+    int i;
+
+    for (i = 0; i < db->table_count; i++)
     {
         if (strcmp(db->tables[i]->name, table_name) == 0)
         {
@@ -174,13 +186,18 @@ Table *find_table(Database *db, const char *table_name)
  */
 void create_table(Database *db, const char *table_name, const char *columns_str)
 {
+    Table *table;
+    char *cols_copy;
+    char *token;
+    Column *col;
+
     if (find_table(db, table_name) != NULL)
     {
         printf("Error: Table '%s' already exists.\n", table_name);
         return;
     }
 
-    Table *table = malloc(sizeof(Table));
+    table = malloc(sizeof(Table));
     if (table == NULL)
     {
         printf("Error: Memory allocation failed for table '%s'.\n", table_name);
@@ -191,7 +208,7 @@ void create_table(Database *db, const char *table_name, const char *columns_str)
     table->column_count = 0;
     table->columns = NULL;
 
-    char *cols_copy = strdup(columns_str);
+    cols_copy = strdup(columns_str);
     if (cols_copy == NULL)
     {
         printf("Error: Memory allocation failed for columns copy.\n");
@@ -199,11 +216,11 @@ void create_table(Database *db, const char *table_name, const char *columns_str)
         return;
     }
 
-    char *token = strtok(cols_copy, ",");
+    token = strtok(cols_copy, ",");
     while (token != NULL)
     {
         token = trim_whitespace(token);
-        Column *col = malloc(sizeof(Column));
+        col = malloc(sizeof(Column));
         if (col == NULL)
         {
             printf("Error: Memory allocation failed for column '%s'.\n", token);
@@ -251,23 +268,31 @@ void create_table(Database *db, const char *table_name, const char *columns_str)
  */
 void insert_into_table(Database *db, const char *table_name, const char *values_str)
 {
-    Table *table = find_table(db, table_name);
+    Table *table;
+    char *vals_copy;
+    char *token;
+    int col_index;
+    char **values;
+    int i;
+    Column *col;
+
+    table = find_table(db, table_name);
     if (table == NULL)
     {
         printf("Error: Table '%s' does not exist.\n", table_name);
         return;
     }
 
-    char *vals_copy = strdup(values_str);
+    vals_copy = strdup(values_str);
     if (vals_copy == NULL)
     {
         printf("Error: Memory allocation failed for values copy.\n");
         return;
     }
 
-    char *token = strtok(vals_copy, ",");
-    int col_index = 0;
-    char **values = malloc(sizeof(char*) * table->column_count);
+    token = strtok(vals_copy, ",");
+    col_index = 0;
+    values = malloc(sizeof(char*) * table->column_count);
     if (values == NULL)
     {
         printf("Error: Memory allocation failed for values array.\n");
@@ -285,7 +310,7 @@ void insert_into_table(Database *db, const char *table_name, const char *values_
             {
                 printf("Error: Invalid IPv4 address '%s'.\n", token);
                 free(vals_copy);
-                for (int i = 0; i < col_index; i++)
+                for (i = 0; i < col_index; i++)
                 {
                     free(values[i]);
                 }
@@ -301,7 +326,7 @@ void insert_into_table(Database *db, const char *table_name, const char *values_
     if (col_index != table->column_count)
     {
         printf("Error: Column count mismatch for table '%s'.\n", table_name);
-        for (int i = 0; i < col_index; i++)
+        for (i = 0; i < col_index; i++)
         {
             free(values[i]);
         }
@@ -309,9 +334,9 @@ void insert_into_table(Database *db, const char *table_name, const char *values_
         return;
     }
 
-    for (int i = 0; i < table->column_count; i++)
+    for (i = 0; i < table->column_count; i++)
     {
-        Column *col = table->columns[i];
+        col = table->columns[i];
         col->data = realloc(col->data, sizeof(char*) * (table->row_count + 1));
         if (col->data == NULL)
         {
@@ -330,7 +355,10 @@ void insert_into_table(Database *db, const char *table_name, const char *values_
  */
 void select_from_table(Database *db, const char *table_name)
 {
-    Table *table = find_table(db, table_name);
+    Table *table;
+    int i, c, r;
+
+    table = find_table(db, table_name);
     if (table == NULL)
     {
         printf("Error: Table '%s' does not exist.\n", table_name);
@@ -338,15 +366,15 @@ void select_from_table(Database *db, const char *table_name)
     }
 
     printf("Table: %s\n", table->name);
-    for (int i = 0; i < table->column_count; i++)
+    for (i = 0; i < table->column_count; i++)
     {
         printf("%s\t", table->columns[i]->name);
     }
     printf("\n");
 
-    for (int r = 0; r < table->row_count; r++)
+    for (r = 0; r < table->row_count; r++)
     {
-        for (int c = 0; c < table->column_count; c++)
+        for (c = 0; c < table->column_count; c++)
         {
             printf("%s\t", table->columns[c]->data[r]);
         }
@@ -358,7 +386,12 @@ void select_from_table(Database *db, const char *table_name)
  */
 void save_database_to_file(Database *db, const char *filename)
 {
-    FILE *file = fopen(filename, "wb");
+    FILE *file;
+    int i, j, r;
+    Table *table;
+    Column *col;
+
+    file = fopen(filename, "wb");
     if (file == NULL)
     {
         printf("Error: Could not open file '%s' for writing.\n", filename);
@@ -366,18 +399,18 @@ void save_database_to_file(Database *db, const char *filename)
     }
 
     fwrite(&db->table_count, sizeof(int), 1, file);
-    for (int i = 0; i < db->table_count; i++)
+    for (i = 0; i < db->table_count; i++)
     {
-        Table *table = db->tables[i];
+        table = db->tables[i];
         write_string(file, table->name);
         fwrite(&table->column_count, sizeof(int), 1, file);
         fwrite(&table->row_count, sizeof(int), 1, file);
 
-        for (int j = 0; j < table->column_count; j++)
+        for (j = 0; j < table->column_count; j++)
         {
-            Column *col = table->columns[j];
+            col = table->columns[j];
             write_string(file, col->name);
-            for (int r = 0; r < table->row_count; r++)
+            for (r = 0; r < table->row_count; r++)
             {
                 write_string(file, col->data[r]);
             }
@@ -392,7 +425,15 @@ void save_database_to_file(Database *db, const char *filename)
  */
 Database *load_database_from_file(Database *db, const char *filename)
 {
-    FILE *file = fopen(filename, "rb");
+    FILE *file;
+    Database *new_db;
+    int table_count;
+    int i, j, r;
+    Table *table;
+    Column *col;
+    char *cell;
+
+    file = fopen(filename, "rb");
     if (file == NULL)
     {
         printf("Error: Could not open file '%s' for reading.\n", filename);
@@ -400,18 +441,18 @@ Database *load_database_from_file(Database *db, const char *filename)
     }
 
     free_database(db);
-    Database *new_db = create_db();
+    new_db = create_db();
     if (new_db == NULL)
     {
         fclose(file);
         return NULL;
     }
 
-    int table_count = 0;
+    table_count = 0;
     fread(&table_count, sizeof(int), 1, file);
-    for (int i = 0; i < table_count; i++)
+    for (i = 0; i < table_count; i++)
     {
-        Table *table = malloc(sizeof(Table));
+        table = malloc(sizeof(Table));
         if (table == NULL)
         {
             printf("Error: Memory allocation failed while loading table.\n");
@@ -423,9 +464,9 @@ Database *load_database_from_file(Database *db, const char *filename)
         fread(&table->row_count, sizeof(int), 1, file);
         table->columns = NULL;
 
-        for (int j = 0; j < table->column_count; j++)
+        for (j = 0; j < table->column_count; j++)
         {
-            Column *col = malloc(sizeof(Column));
+            col = malloc(sizeof(Column));
             if (col == NULL)
             {
                 printf("Error: Memory allocation failed while loading column.\n");
@@ -434,9 +475,9 @@ Database *load_database_from_file(Database *db, const char *filename)
             col->name = read_string(file);
             col->data = NULL;
 
-            for (int r = 0; r < table->row_count; r++)
+            for (r = 0; r < table->row_count; r++)
             {
-                char *cell = read_string(file);
+                cell = read_string(file);
                 col->data = realloc(col->data, sizeof(char*) * (r + 1));
                 if (col->data == NULL)
                 {
@@ -476,10 +517,17 @@ Database *load_database_from_file(Database *db, const char *filename)
 Database *parse_query(Database *db, const char *query)
 {
     char query_copy[MAX_QUERY_LENGTH];
+    char *command;
+    char *next_token;
+    char *table_name;
+    char *columns;
+    char *closing_paren;
+    char *values;
+
     strncpy(query_copy, query, MAX_QUERY_LENGTH - 1);
     query_copy[MAX_QUERY_LENGTH - 1] = '\0';
 
-    char *command = strtok(query_copy, " ");
+    command = strtok(query_copy, " ");
     if (command == NULL)
     {
         printf("Error: Empty query.\n");
@@ -488,28 +536,28 @@ Database *parse_query(Database *db, const char *query)
 
     if (strcmp(command, "CREATE") == 0)
     {
-        char *next_token = strtok(NULL, " ");
+        next_token = strtok(NULL, " ");
         if (next_token == NULL || strcmp(next_token, "TABLE") != 0)
         {
             printf("Error: Invalid CREATE TABLE syntax.\n");
             return db;
         }
 
-        char *table_name = strtok(NULL, " ");
+        table_name = strtok(NULL, " ");
         if (table_name == NULL)
         {
             printf("Error: Table name is missing.\n");
             return db;
         }
 
-        char *columns = strchr(query, '(');
+        columns = strchr(query, '(');
         if (columns == NULL)
         {
             printf("Error: Missing column definitions.\n");
             return db;
         }
         columns++;
-        char *closing_paren = strchr(columns, ')');
+        closing_paren = strchr(columns, ')');
         if (closing_paren == NULL)
         {
             printf("Error: Missing closing parenthesis in column definitions.\n");
@@ -527,28 +575,28 @@ Database *parse_query(Database *db, const char *query)
     }
     else if (strcmp(command, "INSERT") == 0)
     {
-        char *next_token = strtok(NULL, " ");
+        next_token = strtok(NULL, " ");
         if (next_token == NULL || strcmp(next_token, "INTO") != 0)
         {
             printf("Error: Invalid INSERT INTO syntax.\n");
             return db;
         }
 
-        char *table_name = strtok(NULL, " ");
+        table_name = strtok(NULL, " ");
         if (table_name == NULL)
         {
             printf("Error: Table name is missing.\n");
             return db;
         }
 
-        char *values = strchr(query, '(');
+        values = strchr(query, '(');
         if (values == NULL)
         {
             printf("Error: Missing values.\n");
             return db;
         }
         values++;
-        char *closing_paren = strchr(values, ')');
+        closing_paren = strchr(values, ')');
         if (closing_paren == NULL)
         {
             printf("Error: Missing closing parenthesis in values.\n");
@@ -567,9 +615,9 @@ Database *parse_query(Database *db, const char *query)
     else if (strcmp(command, "SELECT") == 0)
     {
         /* Expected syntax: SELECT * FROM table_name */
-        strtok(NULL, " ");  // Skip '*'
-        strtok(NULL, " ");  // Skip 'FROM'
-        char *table_name = strtok(NULL, " ");
+        strtok(NULL, " ");  /* Skip '*' */
+        strtok(NULL, " ");  /* Skip 'FROM' */
+        table_name = strtok(NULL, " ");
         if (table_name == NULL)
         {
             printf("Error: Table name is missing in SELECT query.\n");
